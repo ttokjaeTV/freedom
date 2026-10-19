@@ -76,11 +76,23 @@ function simulate(p, R) {
   return { rows, depl, retireAssets: retireAssets == null ? (p.inv0 + p.cash0) : retireAssets, R: Rr, sumShort };
 }
 
+// 경제적 자유 나이를 찾는 마지막 나이: 보통은 maxAge(계획 나이가 더 이르면 계획 나이),
+// 지금 나이가 이미 maxAge를 넘었으면 계획 나이까지
+function searchLimit(p, maxAge) {
+  return p.age > maxAge ? p.endAge : Math.min(maxAge, p.endAge);
+}
+
 // 가장 빠른 경제적 자유 나이: 그 나이에 일을 그만둬도 계획 나이까지 모자람이 없는 최소 나이
 function freedomAge(p, maxAge) {
-  const lim = Math.min(maxAge, p.endAge);
+  const lim = searchLimit(p, maxAge);
   for (let R = p.age; R <= lim; R++) if (simulate(p, R).depl == null) return R;
   return null;
+}
+
+// 찾는 범위 안에 답이 없을 때: 그 뒤(계획 나이까지)에 은퇴해도 되는 나이가 있나
+function freeBeyond(p, maxAge) {
+  for (let R = searchLimit(p, maxAge) + 1; R <= p.endAge; R++) if (simulate(p, R).depl == null) return true;
+  return false;
 }
 
 // 희망 나이에 은퇴해도 계획 나이까지 버티는 최대 월 생활비 (오늘 돈 가치, 기본 생활비만 조정)
@@ -93,4 +105,4 @@ function maxSpend(p, R) {
   return lo;
 }
 
-if (typeof module !== 'undefined') module.exports = { simulate, freedomAge, maxSpend, annuity12 };
+if (typeof module !== 'undefined') module.exports = { simulate, freedomAge, searchLimit, freeBeyond, maxSpend, annuity12 };

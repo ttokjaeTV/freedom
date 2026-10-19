@@ -2,7 +2,7 @@
 from pathlib import Path
 S = Path(__file__).parent
 t = (S / 'template.html').read_text(encoding='utf-8')
-eng = (S / 'engine.js').read_text(encoding='utf-8').replace("if (typeof module !== 'undefined') module.exports = { simulate, freedomAge, maxSpend, annuity12 };\n", '')
+eng = (S / 'engine.js').read_text(encoding='utf-8').replace("if (typeof module !== 'undefined') module.exports = { simulate, freedomAge, searchLimit, freeBeyond, maxSpend, annuity12 };\n", '')
 t = t.replace('/*__PF_CSS__*/', (S / 'pf.css').read_text(encoding='utf-8').rstrip('\n'))
 t = t.replace('/*__PF_MODULE__*/', (S / 'pf-module.js').read_text(encoding='utf-8').rstrip('\n'))
 t = t.replace('/*__ENGINE__*/', eng)
