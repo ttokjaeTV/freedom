@@ -680,7 +680,8 @@ function renderLevers(p, free) {
     ['생활비 10% 줄이면', `월 ${fmtMan(p.spend * 0.9 / 12)}`, { ...p, spend: p.spend * 0.9 }],
     ['월 50만원 더 벌면', `부업·맞벌이 · 일하는 동안 월 ${fmtMan(p.income / 12 + 5e5)}`, { ...p, income: p.income + 6e6 }],
     ['투자 수익률 +1%p', `은퇴 전·후 모두`, { ...p, rPre: p.rPre + 0.01, rPost: p.rPost + 0.01 }],
-    ['국민연금 2년 늦게 받으면', `${p.npsAge + 2}세부터 +14.4%`, { ...p, npsAge: p.npsAge + 2, nps: p.nps * 1.144 }],
+    // 국민연금이 0원이면 늦게 받아도 달라지는 게 없어 이 손잡이는 뺌
+    ...(p.nps > 0 ? [['국민연금 2년 늦게 받으면', `${p.npsAge + 2}세부터 +14.4%`, { ...p, npsAge: p.npsAge + 2, nps: p.nps * 1.144 }]] : []),
   ];
   $('levers').innerHTML = L.map(([t, s, pp]) => {
     const f = freedomAge(pp, MAX_SEARCH);
@@ -781,7 +782,7 @@ function renderInsight(p, res, free, mxR) {
   const save = (p.income - p.spend) / 12;
   const saved = res.rows.filter(r => r.working).reduce((a, r) => a + Math.max(0, r.flow), 0);
   const share = res.retireAssets > 0 ? Math.round(saved / res.retireAssets * 100) : 0;
-  if (p.retire > p.age) li.push(save > 0 ? `지금 월 <strong>${fmtMan(save)}</strong>씩 남는 돈이 자산을 키우는 엔진이에요. ${p.retire}세까지 저축으로 넣는 돈만 미래 금액으로 <strong>${fmtMan(saved)}</strong> — 은퇴할 때 자산 ${fmtMan(res.retireAssets)}의 <strong>${share}%</strong>를 차지합니다. 나머지는 지금 자산과 수익이 만든 몫이에요.` : `지금은 버는 돈보다 쓰는 돈이 많아 <strong>일하는 동안에도 자산이 줄고 있어요</strong>. 경제적 자유 나이를 정하는 가장 큰 변수는 수익률보다 생활비입니다.`);
+  if (p.retire > p.age) li.push(save > 0 ? `지금 월 <strong>${fmtMan(save)}</strong>씩 남는 돈이 자산을 키우는 엔진이에요. ${p.retire}세까지 저축으로 넣는 돈만 미래 금액으로 <strong>${fmtMan(saved)}</strong> — 은퇴할 때 자산 ${fmtMan(res.retireAssets)}의 <strong>${share}%</strong>를 차지합니다. 나머지는 지금 자산과 수익이 만든 몫이에요.` : Math.abs(save) < 1 ? `지금은 버는 돈과 쓰는 돈이 같아 <strong>저축으로 보태는 돈이 없어요</strong>.${p.inv0 + p.cash0 > 0 && p.rPre > 0 ? ' 일하는 동안 자산은 지금 가진 돈의 투자 수익만큼만 늘어요.' : ''} 경제적 자유 나이를 정하는 가장 큰 변수는 수익률보다 생활비입니다.` : `지금은 버는 돈보다 쓰는 돈이 많아 <strong>일하는 동안에도 자산이 줄고 있어요</strong>. 경제적 자유 나이를 정하는 가장 큰 변수는 수익률보다 생활비입니다.`);
   if (gap > 0) li.push(`은퇴 후 국민연금을 받기 전 <strong>${gap}년 공백기</strong>가 가장 위험한 구간이에요. 이 기간 생활비를 따로 떼어 두면(현금성 자산·인출용 포트폴리오) 하락장에 투자자산을 싸게 파는 일을 줄일 수 있습니다.`);
   if (mxR > 0 && p.spend / 12 < mxR) li.push(`희망하신 ${p.retire}세에 은퇴해도 월 <strong>${fmtMan(mxR)}</strong>까지는 계획 나이까지 버틸 수 있어요. 여유분을 더 쓸지, 은퇴를 당길지 고를 수 있는 상태입니다.`);
   else if (mxR > 0) li.push(`희망하신 ${p.retire}세에 은퇴하려면 월 생활비를 <strong>${fmtMan(mxR)}</strong> 이하로 맞춰야 해요(지금보다 월 ${fmtMan(p.spend / 12 - mxR)} 적게).`);
