@@ -485,7 +485,7 @@
 
   <div class="card">
     <div class="chart-head">
-      <div><div class="chart-title">생애 자산 흐름</div><div class="chart-subtitle" id="chart1-sub">연말 자산 · 희망 나이에 은퇴했을 때</div></div>
+      <div><div class="chart-title">생애 자산 흐름</div><div class="chart-subtitle" id="chart1-sub">연초 자산(그 나이가 된 해 첫날) · 희망 나이에 은퇴했을 때</div></div>
       <div class="seg real-seg" id="real-seg"><button type="button" data-v="real" class="on">오늘 돈 가치(실질)</button><button type="button" data-v="nom">미래 금액(명목)</button></div>
     </div>
     <div class="chart-container"><canvas id="bal-chart"></canvas></div>
@@ -1071,7 +1071,7 @@ function render() {
   const free = freedomAge(p, MAX_SEARCH);
   const resFree = free != null ? simulate(p, free) : null;
   const ix = t => Math.pow(1 + p.inf, t);
-  const real = r => r.end / r.ix;
+  const real = r => r.end / (r.ix * (1 + p.inf));   // 연말 잔액 = 다음 해 연초 시점 → 그 시점 물가 지수로 나눔
   last = { p, res, free };
 
   // 결론
@@ -1163,7 +1163,7 @@ function renderAgeTable(p, free) {
     const res = r.depl == null ? `<td class="ok">버팀</td>` : `<td class="bad">${r.depl}세 바닥</td>`;
     const cls = a === p.retire ? 'mine' : (a === free ? 'free' : '');
     const badge = (a === p.retire ? '<span class="badge mine">희망</span>' : '') + (a === free ? '<span class="badge free">자유</span>' : '');
-    return `<tr class="${cls}"><td>${a}세${badge}</td><td>${fmtMan(r.retireAssets / Math.pow(1 + p.inf, RT))}</td>${res}<td>${r.depl == null ? fmtMan(e.end / e.ix) : '-'}</td><td>월 ${fmtMan(ms)}</td></tr>`;
+    return `<tr class="${cls}"><td>${a}세${badge}</td><td>${fmtMan(r.retireAssets / Math.pow(1 + p.inf, RT))}</td>${res}<td>${r.depl == null ? fmtMan(e.end / (e.ix * (1 + p.inf))) : '-'}</td><td>월 ${fmtMan(ms)}</td></tr>`;
   }).join('');
 }
 
@@ -1174,6 +1174,8 @@ function renderCharts(p, res, free) {
   const rows = res.rows;
   const lbl = rows.map(r => r.a);
   const dv = r => (realOn ? r.ix : 1) * 1e8;
+  // 자산 차트는 그 나이가 된 해 연초 잔액(첫해는 지금 자산, 그다음은 지난해 연말 잔액) — 나이 라벨·물가 지수(r.ix)와 같은 시점
+  const startInv = i => (i === 0 ? p.inv0 : rows[i - 1].endInv), startCash = i => (i === 0 ? p.cash0 : rows[i - 1].endCash);
   const tickCb = v => (Math.round(v * 10) / 10) + '억';
   const tip = { mode: 'index', intersect: false, callbacks: { label: c => `${c.dataset.label}: ${fmtMan(c.raw * 1e8)}`, title: it => `${it[0].label}세 (${p.year0 + it[0].dataIndex}년)` } };
   const opt = (stacked) => ({ responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
@@ -1188,8 +1190,8 @@ function renderCharts(p, res, free) {
     if (res.depl != null) vline(g, c, res.depl - p.age, '#2E5E8A', '바닥', 44);
     g.restore(); } };
   const ds = [
-    { label: '투자자산', data: rows.map(r => r.endInv / dv(r)), backgroundColor: '#D9542BCC', borderColor: '#D9542B', borderWidth: 1, fill: true, pointRadius: 0, tension: 0.2, stack: 's' },
-    { label: '현금성 자산', data: rows.map(r => r.endCash / dv(r)), backgroundColor: '#C4A57BCC', borderColor: '#C4A57B', borderWidth: 1, fill: true, pointRadius: 0, tension: 0.2, stack: 's' },
+    { label: '투자자산', data: rows.map((r, i) => startInv(i) / dv(r)), backgroundColor: '#D9542BCC', borderColor: '#D9542B', borderWidth: 1, fill: true, pointRadius: 0, tension: 0.2, stack: 's' },
+    { label: '현금성 자산', data: rows.map((r, i) => startCash(i) / dv(r)), backgroundColor: '#C4A57BCC', borderColor: '#C4A57B', borderWidth: 1, fill: true, pointRadius: 0, tension: 0.2, stack: 's' },
   ];
   if (balChart) balChart.destroy();
   balChart = new Chart($('bal-chart'), { type: 'line', data: { labels: lbl, datasets: ds }, options: opt(true), plugins: [marker] });
@@ -1203,13 +1205,14 @@ function renderCharts(p, res, free) {
   const o2 = opt(false); o2.scales.x.stacked = true; o2.scales.y.stacked = false;
   if (flowChart) flowChart.destroy();
   flowChart = new Chart($('flow-chart'), { data: { labels: lbl, datasets: ds2 }, options: o2 });
-  $('chart1-sub').textContent = `연말 자산 · 희망 나이(${p.retire}세)에 은퇴했을 때 · 파란 띠는 위기 시나리오가 든 해`;
+  $('chart1-sub').textContent = `연초 자산(그 나이가 된 해 첫날) · 희망 나이(${p.retire}세)에 은퇴했을 때 · 파란 띠는 위기 시나리오가 든 해`;
 }
 
 function renderTable(p, res) {
   const realOn = ST.real === 'real';
   const d = r => realOn ? r.ix : 1;
   const f = (v, r) => manT(v / d(r));
+  const fEnd = r => manT(r.end / (realOn ? r.ix * (1 + p.inf) : 1));   // 연말 자산은 다음 해 연초 물가 지수로
   $('yr-sub').textContent = `희망 나이(${p.retire}세)에 은퇴했을 때 · ${realOn ? '오늘 돈 가치(실질)' : '미래 금액(명목)'} · 위 차트 단추로 바꿀 수 있어요`;
   $('yr-table').querySelector('tbody').innerHTML = res.rows.map(r => {
     const notes = [...r.ev];
@@ -1218,7 +1221,7 @@ function renderTable(p, res) {
     p.lumps.forEach(l => { if (l.age === r.a) notes.push(esc(l.name || '큰돈')); });
     p.chg.forEach(c => { if (c.age === r.a) notes.push(esc(c.name || '생활비 변화')); });
     if (p.safe.on && r.a === p.safe.age) notes.push('안전자산으로');
-    return `<tr class="${r.short > 1e4 ? 'short' : ''}${r.a === res.R && res.R > p.age ? ' ret' : ''}"><td>${r.a}</td><td>${p.year0 + r.t}</td><td>${f(r.inc, r)}</td><td>${f(r.pub, r)}</td><td>${f(r.pv, r)}</td><td>${f(r.sp, r)}</td><td class="${r.lump < 0 ? 'neg' : ''}">${r.lump ? (r.lump < 0 ? '−' : '+') + manT(Math.abs(r.lump) / d(r)) : '-'}</td><td>${f(r.drawn, r)}</td><td class="${r.short > 1e4 ? 'neg' : ''}">${f(r.short, r)}</td><td><b>${f(r.end, r)}</b></td><td class="ev">${notes.join(' · ')}</td></tr>`;
+    return `<tr class="${r.short > 1e4 ? 'short' : ''}${r.a === res.R && res.R > p.age ? ' ret' : ''}"><td>${r.a}</td><td>${p.year0 + r.t}</td><td>${f(r.inc, r)}</td><td>${f(r.pub, r)}</td><td>${f(r.pv, r)}</td><td>${f(r.sp, r)}</td><td class="${r.lump < 0 ? 'neg' : ''}">${r.lump ? (r.lump < 0 ? '−' : '+') + manT(Math.abs(r.lump) / d(r)) : '-'}</td><td>${f(r.drawn, r)}</td><td class="${r.short > 1e4 ? 'neg' : ''}">${f(r.short, r)}</td><td><b>${fEnd(r)}</b></td><td class="ev">${notes.join(' · ')}</td></tr>`;
   }).join('');
 }
 
@@ -1326,7 +1329,7 @@ $('csv-btn').addEventListener('click', () => {
   const { p, res } = last;
   const R = v => Math.round(v || 0);
   const out = [['나이', '연도', '근로소득', '공적연금', '개인연금', '생활비', '큰돈', '꺼낸 돈', '모자람', '연말 투자자산', '연말 현금성 자산', '연말 자산(명목)', '연말 자산(오늘 돈 가치)', '비고']];
-  res.rows.forEach(r => out.push([r.a, p.year0 + r.t, R(r.inc), R(r.pub), R(r.pv), R(r.sp), R(r.lump), R(r.drawn), R(r.short), R(r.endInv), R(r.endCash), R(r.end), R(r.end / r.ix), r.ev.join(' ')]));
+  res.rows.forEach(r => out.push([r.a, p.year0 + r.t, R(r.inc), R(r.pub), R(r.pv), R(r.sp), R(r.lump), R(r.drawn), R(r.short), R(r.endInv), R(r.endCash), R(r.end), R(r.end / (r.ix * (1 + p.inf))), r.ev.join(' ')]));
   const csv = '﻿' + out.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '경제적자유_연도별.csv'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
