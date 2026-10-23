@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<script src="https://ttokjaetv.github.io/member-lock.js"></script>
+<script src="https://ttokjaetv.github.io/profile-v1.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>경제적 자유 계산기 · 똑재TV</title>
 <meta name="description" content="지금 자산·수입·생활비·국민연금을 넣으면 몇 살에 일을 그만둬도 되는지(경제적 자유 나이)와 95세까지 자산 흐름을 보여 주는 무료 계산기. 불황·폭락 시나리오까지 시험해 볼 수 있습니다.">
@@ -318,6 +320,8 @@
     <button type="button" class="tool-btn" id="reset-btn">처음 값으로</button>
     <a href="#result" class="tool-btn ghost">결과 보기 ↓</a>
   </div>
+
+  <div id="tj-profile"></div>
 
   <!-- STEP 01 -->
   <div class="card">
@@ -1348,6 +1352,10 @@ $('csv-btn').addEventListener('click', () => {
   PF.render();
   render();
   PF.load(render);
+  /* 내 정보(다른 노후 계산기와 같이 쓰는 값) 채우기·저장 — 허브 profile-v1.js */
+  if (window.TJProfile) TJProfile.attach({ map: {
+    'age': 'age', 'end-age': 'endAge', 'retire': 'retireAge', 'inv0': 'fin', 'income': 'income', 'spend': 'spend',
+    'inf': 'inflation', 'nps': 'nps', 'nps-age': 'npsAge' } });
 })();
 </script>
 </body>
