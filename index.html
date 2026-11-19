@@ -5,6 +5,7 @@
 <script src="https://ttokjaetv.github.io/member-lock.js"></script>
 <script src="https://ttokjaetv.github.io/profile-v1.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico">
 <title>경제적 자유 계산기 · 똑재TV</title>
 <meta name="description" content="지금 자산·수입·생활비·국민연금을 넣으면 몇 살에 일을 그만둬도 되는지(경제적 자유 나이)와 95세까지 자산 흐름을 보여 주는 무료 계산기. 불황·폭락 시나리오까지 시험해 볼 수 있습니다.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
@@ -106,6 +107,9 @@
   .real-seg { width: auto; }
   .real-seg button { padding: 7px 12px; font-size: 13px; white-space: nowrap; }
 
+  .scroll-hint { display: none; margin: 12px 0 -8px; text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-mute); }
+  @media (max-width: 558px) { .scroll-hint.sh-558 { display: block; } }
+  @media (max-width: 964px) { .scroll-hint.sh-964 { display: block; } }
   .table-wrap { overflow-x: auto; margin-top: 16px; border-radius: 12px; -webkit-overflow-scrolling: touch; }
   .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .data-table th { background: var(--bg-alt); padding: 12px 10px; text-align: right; font-weight: 800; color: var(--ink-soft); font-size: 13px; border-bottom: 1.5px solid var(--border); white-space: nowrap; }
@@ -484,6 +488,7 @@
     <div class="levers" id="levers"></div>
 
     <div class="sub-title">은퇴 나이별로 비교하면 <small>오늘 돈 가치</small></div>
+    <p class="scroll-hint sh-558" aria-hidden="true">← 옆으로 밀어 보세요 →</p>
     <div class="table-wrap"><table class="data-table" id="age-table"><thead><tr><th>은퇴 나이</th><th>은퇴할 때 자산</th><th>결과</th><th id="age-table-left">계획 나이에 남는 돈</th><th>쓸 수 있는 월 생활비</th></tr></thead><tbody></tbody></table></div>
   </div>
 
@@ -502,6 +507,7 @@
   <div class="card">
     <details class="fold" id="yr-fold">
       <summary><div><div class="chart-title">연도별 상세 (만원)</div><div class="chart-subtitle" id="yr-sub">희망 나이에 은퇴했을 때 · 오늘 돈 가치</div></div><span class="fold-btn"><span class="open-txt">펼치기 ▾</span><span class="close-txt">접기 ▴</span></span></summary>
+      <p class="scroll-hint sh-964" aria-hidden="true">← 옆으로 밀어 보세요 →</p>
       <div class="table-wrap"><table class="data-table yr-table" id="yr-table"><thead><tr><th>나이</th><th>연도</th><th>근로소득</th><th>공적연금</th><th>개인연금</th><th>생활비</th><th>큰돈</th><th>꺼낸 돈</th><th>모자람</th><th>연말 자산</th><th>비고</th></tr></thead><tbody></tbody></table></div>
       <button type="button" class="dl-btn" id="csv-btn">표 내려받기 (CSV)</button>
     </details>
